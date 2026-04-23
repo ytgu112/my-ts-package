@@ -1,0 +1,19 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Coverage
+coverage/
+
+# Release artifacts
+*.tgz
+
+# Environment variables
+.env
+.env.local
+.env.*.local
