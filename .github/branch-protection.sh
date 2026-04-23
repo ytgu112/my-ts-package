@@ -6,12 +6,14 @@
 # - Up-to-date branch (strict status checks)
 # - Mandatory status checks (validate job)
 
-REPO=$(gh repo view --json url -q .url)
+# Get the repository name and owner from git remote
+REPO_FULL=$(git remote get-url origin | sed -E 's/.*github.com[:\/](.*)\.git/\1/')
 BRANCH="main"
 
-echo "Setting up branch protection for $REPO on branch $BRANCH..."
+echo "Setting up branch protection for $REPO_FULL on branch $BRANCH..."
 
-gh api -X PUT /repos/:owner/:repo/branches/$BRANCH/protection \
+# Using a single line for gh api to avoid line-continuation issues with CRLF/LF
+gh api -X PUT "/repos/$REPO_FULL/branches/$BRANCH/protection" \
   -H "Accept: application/vnd.github+json" \
   -f "required_status_checks[strict]=true" \
   -f "required_status_checks[contexts][]=ci-cd / validate" \
