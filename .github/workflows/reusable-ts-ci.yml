@@ -28,9 +28,19 @@ on:
         required: false
         default: '.'
         type: string
+      is-release:
+        description: 'Whether to release the package'
+        required: false
+        default: false
+        type: boolean
+      is-release-candidate:
+        description: 'Whether this is a release candidate'
+        required: false
+        default: false
+        type: boolean
     secrets:
       NPM_TOKEN:
-        description: 'NPM token for publishing (optional)'
+        description: 'NPM token for publishing'
         required: false
 
 jobs:
@@ -64,3 +74,48 @@ jobs:
         with:
           name: build-artifacts
           path: ${{ inputs.working-directory }}/dist/
+
+  release:
+    needs: ci
+    if: ${{ inputs.is-release && secrets.NPM_TOKEN }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: ${{ inputs.working-directory }}/dist/
+
+      - name: Publish to NPM
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Get version
+        id: pkg
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release and Tag
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.pkg.outputs.version }}
+          name: Release v${{ steps.pkg.outputs.version }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
