@@ -77,7 +77,7 @@ jobs:
 
   release:
     needs: ci
-    if: ${{ inputs.is-release && secrets.NPM_TOKEN }}
+    if: ${{ inputs.is-release }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
