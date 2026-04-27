@@ -1,6 +1,6 @@
 {
   "name": "@ytgu/my-ts-package",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A simple TypeScript package",
   "type": "module",
   "main": "./dist/index.js",
