@@ -105,6 +105,9 @@ jobs:
           node-version: ${{ inputs.node-version }}
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Install dependencies
+        run: ${{ inputs.install-command }}
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
