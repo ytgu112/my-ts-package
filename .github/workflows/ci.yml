@@ -27,20 +27,33 @@ jobs:
             let publish = false;
             let is_release = false;
 
+            console.log(`Event Name: ${context.eventName}`);
+
             if (context.eventName === 'pull_request') {
               const labels = context.payload.pull_request.labels.map(l => l.name);
+              console.log(`Detected PR labels: ${JSON.stringify(labels)}`);
               verify = labels.includes('verify');
               publish = labels.includes('publish');
             } else if (context.eventName === 'push' && context.ref === 'refs/heads/main') {
+              console.log(`Push to main detected. SHA: ${context.sha}`);
               const { data: pullRequests } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 commit_sha: context.sha,
               });
-              const pr = pullRequests.find(p => p.merge_commit_sha === context.sha);
-              is_release = pr && pr.labels.some(l => l.name === 'publish');
+              
+              console.log(`Associated PRs count: ${pullRequests.length}`);
+              const pr = pullRequests.find(p => p.merge_commit_sha === context.sha || p.labels.some(l => l.name === 'publish'));
+              
+              if (pr) {
+                console.log(`Found PR #${pr.number}. Labels: ${JSON.stringify(pr.labels.map(l => l.name))}`);
+                is_release = pr.labels.some(l => l.name === 'publish');
+              } else {
+                console.log('No associated PR found for this push.');
+              }
             }
 
+            console.log(`Final outputs - verify: ${verify}, publish: ${publish}, is-release: ${is_release}`);
             core.setOutput('verify', verify);
             core.setOutput('publish', publish);
             core.setOutput('is-release', is_release);
