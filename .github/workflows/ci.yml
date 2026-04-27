@@ -36,20 +36,38 @@ jobs:
               publish = labels.includes('publish');
             } else if (context.eventName === 'push' && context.ref === 'refs/heads/main') {
               console.log(`Push to main detected. SHA: ${context.sha}`);
+              
+              // Get all PRs associated with this commit
               const { data: pullRequests } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 commit_sha: context.sha,
               });
               
-              console.log(`Associated PRs count: ${pullRequests.length}`);
-              const pr = pullRequests.find(p => p.merge_commit_sha === context.sha || p.labels.some(l => l.name === 'publish'));
+              console.log(`Associated PRs found: ${pullRequests.length}`);
+              
+              // Find the first merged PR that has the 'publish' label
+              const pr = pullRequests.find(p => p.labels.some(l => l.name === 'publish'));
               
               if (pr) {
-                console.log(`Found PR #${pr.number}. Labels: ${JSON.stringify(pr.labels.map(l => l.name))}`);
-                is_release = pr.labels.some(l => l.name === 'publish');
+                console.log(`Found associated PR #${pr.number} with 'publish' label. State: ${pr.state}, Merged: ${pr.merged_at}`);
+                is_release = true;
               } else {
-                console.log('No associated PR found for this push.');
+                console.log('No associated PR with "publish" label found. Checking recent closed PRs as fallback...');
+                // Fallback: check last 5 closed PRs if API association is slow
+                const { data: recentPrs } = await github.rest.repos.listPullRequests({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'closed',
+                  base: 'main',
+                  per_page: 5
+                });
+                
+                const matchedPr = recentPrs.find(p => p.merge_commit_sha === context.sha && p.labels.some(l => l.name === 'publish'));
+                if (matchedPr) {
+                   console.log(`Fallback found PR #${matchedPr.number} matching merge_commit_sha.`);
+                   is_release = true;
+                }
               }
             }
 
