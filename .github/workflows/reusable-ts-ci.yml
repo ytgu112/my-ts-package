@@ -68,9 +68,14 @@ jobs:
       - name: Install dependencies
         run: ${{ inputs.install-command }}
 
-      - name: Check if version is bumped
+      - name: Check if version is bumped and verified
         if: ${{ inputs.is-release-candidate }}
         run: |
+          if [[ "${{ inputs.run-integration }}" != "true" ]]; then
+            echo "::error::Release blocked: The 'publish' label requires the 'verify' label to be present. Please add 'verify' to run integration tests before releasing."
+            exit 1
+          fi
+
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "Checking if $PACKAGE_NAME@$CURRENT_VERSION is already published..."
