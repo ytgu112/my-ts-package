@@ -54,9 +54,9 @@ jobs:
             }
 
             console.log(`Final outputs - verify: ${verify}, publish: ${publish}, is-release: ${is_release}`);
-            core.setOutput('verify', verify);
-            core.setOutput('publish', publish);
-            core.setOutput('is-release', is_release);
+            core.setOutput('verify', String(verify));
+            core.setOutput('publish', String(publish));
+            core.setOutput('is-release', String(is_release));
 
   ci-cd:
     needs: check-labels
